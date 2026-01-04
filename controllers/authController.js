@@ -1,9 +1,10 @@
 import AuthRepository from "../repositories/authRepository.js";
 import AuthService from "../services/authService.js";
-import EmailService from "../services/emailService.js";
 import OtpService from "../services/otpService.js";
 import TokenService from "../services/tokenService.js";
+import verificationService from "../services/verificationService.js";
 import { AppError } from "../utilities/AppError.js";
+import PasswordUtil from "../utilities/password.js";
 
 //Documentation ooooooooooooo
 
@@ -38,6 +39,16 @@ class AuthController {
         )
       );
     }
+
+    // const { validatePassword, isPasswordValid } = PasswordUtil;
+    // const passwordValDetails = validatePassword(password);
+    // const isPassValid = isPasswordValid(passwordValDetails);
+
+    // const passErrStr = JSON.stringify(passwordValDetails);
+
+    // if (!isPassValid) {
+    //   return next(new AppError(400, "Password validation failed: " + passErrStr));
+    // }
 
     //Handles invalid role being passed.
     if (!["MERCHANT", "USER"].includes(role)) {
@@ -140,7 +151,11 @@ class AuthController {
     }
 
     try {
-      await new EmailService(user).sendPasswordResetMail(url);
+      await verificationService.sendVerificationLink({
+        user,
+        type: "FORGOT_PASSWORD",
+        req,
+      });
     } catch (err) {
       console.log("Error sending verification liink: ", err);
       return next(new AppError(500, "Failed to send verification email"));
@@ -157,7 +172,28 @@ class AuthController {
       return next(new AppError(400, "Missing verification token."));
     }
 
-    console.log(req.params.token);
+    if (!req.body || !req.body.password) {
+      return next(new AppError(400, "Missing new password."));
+    }
+    const token = req.params.token;
+    const password = req.body.password;
+
+    const { validatePassword, isPasswordValid } = PasswordUtil;
+    const passwordValDetails = validatePassword(password);
+    const isPassValid = isPasswordValid(passwordValDetails);
+
+    const passErrStr = JSON.stringify(passwordValDetails);
+
+    if (!isPassValid) {
+      return next(new AppError(400, "Password validation failed: " + passErrStr));
+    }
+
+    await AuthService.resetPassword({ token, password });
+
+    res.status(200).json({
+      status: "success",
+      message: "Password reset successful",
+    });
   }
 
   static async protect(req, res, next) {
