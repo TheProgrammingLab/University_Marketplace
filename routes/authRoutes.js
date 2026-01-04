@@ -1,8 +1,24 @@
 import { Router } from "express";
-import { register, login } from "../controllers/authController";
+import AuthController from "../controllers/authController.js";
+import handleAsyncError from "../utilities/handleAsyncErr.js";
 const router = Router();
 
-router.post("/register", register);
-router.post("/login", login);
+router.post("/register", handleAsyncError(AuthController.register));
+router.post("/login", handleAsyncError(AuthController.login));
+router.patch(
+  "/verify-otp",
+  handleAsyncError(AuthController.protect),
+  handleAsyncError(AuthController.verifyOtp)
+);
+router.post(
+  "/resend-otp",
+  handleAsyncError(AuthController.protect),
+  handleAsyncError(AuthController.sendVerificationOtp)
+);
+
+router.post("/forgot-password", handleAsyncError(AuthController.forgotPassword));
+router.patch("/reset-password/:token", handleAsyncError(AuthController.resetPassword));
+
+// router.post("/login", login);
 
 export default router;
