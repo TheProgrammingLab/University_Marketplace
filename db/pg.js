@@ -25,6 +25,11 @@ const pool = new Pool({
   }
 })();
 
+pool.on("error", err => {
+  console.error("Unexpected PG error", err);
+  process.exit(1);
+});
+
 // pool
 //   .connect()
 //   .then(client => {

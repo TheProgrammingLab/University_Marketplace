@@ -7,7 +7,7 @@ dotenv.config();
 const { HOST, PORT, ENV } = process.env;
 
 const server = app.listen(PORT, HOST, () => {
-  console.log(`Server running in ${ENV}`);
+  console.log(`Server running port: ${PORT} in ${ENV}`);
 });
 
 process.on("SIGINT", () => {
