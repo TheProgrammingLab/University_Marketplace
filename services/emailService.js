@@ -1,34 +1,67 @@
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
 const {
   NODEMAILER_SMTP_PASS,
   NODEMAILER_SMTP_USER,
   NODEMAILER_SMTP_HOST,
   NODEMAILER_SMTP_PORT,
+  RESEND_API_KEY,
+  ENV,
 } = process.env;
+
+const resend = new Resend(RESEND_API_KEY);
+const DEFAULT_FROM = "UniMart <onboarding@resend.dev>"; // Until we have domain
 
 export default class EmailService {
   constructor(user) {
-    this.transporter = nodemailer.createTransport({
-      host: NODEMAILER_SMTP_HOST,
-      port: NODEMAILER_SMTP_PORT,
-      auth: {
-        user: NODEMAILER_SMTP_USER, // generated brevo user
-        pass: NODEMAILER_SMTP_PASS, // generated brevo password
-      },
-    });
     this.user = user;
+
+    this.isProduction = ENV === "production";
+
+    if (!this.isProduction) {
+      this.transporter = nodemailer.createTransport({
+        host: NODEMAILER_SMTP_HOST,
+        port: Number(NODEMAILER_SMTP_PORT),
+        auth: {
+          user: NODEMAILER_SMTP_USER,
+          pass: NODEMAILER_SMTP_PASS,
+        },
+      });
+    }
   }
 
-  // async sendMail({ subject, text, html }) {}
+  async sendMail({ to, subject, text, html }) {
+    try {
+      if (this.isProduction) {
+        return await resend.emails.send({
+          from: DEFAULT_FROM,
+          to,
+          subject,
+          text,
+          html,
+        });
+      }
+
+      return await this.transporter.sendMail({
+        from: "UniMart <no-reply@ynodomain.com>",
+        to,
+        subject,
+        text,
+        html,
+      });
+    } catch (err) {
+      console.error("Failed to send verification email:", err);
+      throw err;
+    }
+  }
 
   async sendOtpMail(otp) {
-    try {
-      let info = await this.transporter.sendMail({
-        from: "UniMart <no-reply@ynodomain.com>", // sender address
-        to: this.user.email, // recipient
-        subject: "UniMart Verification Code – Expires in 10 Minutes", // professional subject line
-        text: `Hello ${this.user.first_name || this.user.username || ""},
+    const name = this.user.first_name || this.user.username || "";
+    return await this.sendMail({
+      to: this.user.email,
+      subject: "UniMart Verification Code – Expires in 10 Minutes",
+      text: `Hello ${name},
 
 Your UniMart verification code is: ${otp}
 
@@ -38,7 +71,7 @@ If you did not request this code, please ignore this email.
 
 Thank you,
 The UniMart Team`,
-        html: `
+      html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
           <h2 style="color: #2c3e50;">Hello ${
             this.user.first_name || this.user.username || ""
@@ -51,26 +84,17 @@ The UniMart Team`,
           <p>Thank you,<br/>The UniMart Team</p>
         </div>
       `,
-      });
-
-      console.log("Verification email sent:", info.messageId);
-      return info;
-    } catch (err) {
-      console.error("Failed to send verification email:", err);
-      throw err;
-    }
+    });
   }
 
   async sendPasswordResetMail(verificationLink) {
-    try {
-      const name = this.user.first_name || this.user.username || "";
+    const name = this.user.first_name || this.user.username || "";
 
-      let info = await this.transporter.sendMail({
-        from: "UniMart <no-reply@ynodomain.com>",
-        to: this.user.email,
-        subject: "Reset your UniMart password (link expires in 30 minutes)",
+    return await this.sendMail({
+      to: this.user.email,
+      subject: "Reset your UniMart password (link expires in 30 minutes)",
 
-        text: `Hello ${name},
+      text: `Hello ${name},
 
 We received a request to reset your UniMart account password.
 
@@ -84,7 +108,7 @@ If you did not request a password reset, please ignore this email. Your account 
 Thanks,
 The UniMart Team`,
 
-        html: `
+      html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
           <h2 style="color: #2c3e50;">Hello ${name},</h2>
 
@@ -130,13 +154,6 @@ The UniMart Team`,
           </p>
         </div>
       `,
-      });
-
-      console.log("Password reset email sent:", info.messageId);
-      return info;
-    } catch (err) {
-      console.error("Failed to send password reset email:", err);
-      throw err;
-    }
+    });
   }
 }
