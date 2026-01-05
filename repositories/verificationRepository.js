@@ -10,6 +10,25 @@ export default class VerificationRepository {
     VALUES ($1, $2, $3, $4)
     `;
 
-    await db.query(query, [user_id, token_hash, type, expires_at, used]);
+    await db.query(query, [user_id, token_hash, type, expires_at]);
+  }
+
+  static async findTokenByHash(token_hash, db = pool) {
+    const query = `
+    SELECT * FROM verification_links
+    WHERE token_hash = $1
+    `;
+
+    const { rows } = await db.query(query, [token_hash]);
+    return rows[0] || null;
+  }
+
+  static async updateUsedToken({ user_id, token_hash }, db = pool) {
+    const query = ` 
+    UPDATE verification_links
+    SET used = TRUE
+    WHERE user_id = $1 AND token_hash = $2
+    `;
+    await db.query(query, [user_id, token_hash]);
   }
 }
