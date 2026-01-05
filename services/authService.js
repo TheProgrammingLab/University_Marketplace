@@ -47,7 +47,6 @@ class AuthService {
     const client = await pool.connect();
     const user = await AuthRepository.findUserByLoginId(loginId);
 
-    // console.log(user, "user", { loginId, password });
     if (!user) {
       throw new AppError(401, "Invalid login credentials");
     }
@@ -86,11 +85,16 @@ class AuthService {
   }
 
   static async resetPassword({ token, password }) {
+    const client = await pool.connect();
     const tokenHash = TokenService.hashToken(token);
     const verificationToken = await VerificationRepository.findTokenByHash(tokenHash);
 
     if (!verificationToken) {
       throw new AppError(400, "Invalid token");
+    }
+
+    if (verificationToken.used) {
+      throw new AppError(400, "Verfication link used");
     }
 
     if (verificationToken.expires_at < Date.now()) {
@@ -103,10 +107,20 @@ class AuthService {
     }
 
     try {
-      await AuthRepository.updateUserPassword({ user_id: user.id, password });
+      await client.query("BEGIN");
+      await AuthRepository.updateUserPassword({ user_id: user.id, password }, client);
+      await VerificationRepository.updateUsedToken(
+        { user_id: user.id, token_hash: verificationToken.token_hash },
+        client
+      );
+
+      await client.query("COMMIT");
     } catch (err) {
       console.log("Error reseting user password: ", err);
+      await client.query("ROLLBACK");
       throw new AppError(500, "Failed to reset password. Please try again");
+    } finally {
+      await client.release();
     }
   }
 }

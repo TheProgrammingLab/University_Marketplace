@@ -32,8 +32,6 @@ export default class OtpService {
         client
       );
 
-      console.log(userOtp);
-
       if (!userOtp || userOtp.used) {
         throw new AppError(400, "OTP is invalid or already used.");
       }

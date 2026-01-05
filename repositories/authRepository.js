@@ -10,14 +10,12 @@ class AuthRepository {
     { email, username, password, first_name, last_name, role },
     db = pool
   ) {
-    const hashedPass = await bcrypt.hash(password, 12);
-
     const query = `
         INSERT INTO users (email, username, password, first_name, last_name, role)
         VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING id, email, username, first_name, last_name, role, is_verified, created_at
         `;
-    const values = [email, username, hashedPass, first_name, last_name, role];
+    const values = [email, username, password, first_name, last_name, role];
     const { rows } = await db.query(query, values);
 
     return rows[0];
@@ -25,7 +23,7 @@ class AuthRepository {
 
   static async findUserByLoginId(loginId, db = pool) {
     const query = `
-    SELECT id, email, username, first_name, last_name, role, is_verified, created_at FROM users WHERE email = $1 OR username = $1 
+    SELECT id, email, username, first_name, last_name, role, is_verified, created_at, password FROM users WHERE email = $1 OR username = $1 
     `;
     // console.log(loginId, "loginId");
     const { rows } = await db.query(query, [loginId]);

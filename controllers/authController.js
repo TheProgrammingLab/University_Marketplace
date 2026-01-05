@@ -40,15 +40,15 @@ class AuthController {
       );
     }
 
-    // const { validatePassword, isPasswordValid } = PasswordUtil;
-    // const passwordValDetails = validatePassword(password);
-    // const isPassValid = isPasswordValid(passwordValDetails);
+    const { validatePassword, isPasswordValid } = PasswordUtil;
+    const passwordValDetails = validatePassword(password);
+    const isPassValid = isPasswordValid(password);
 
-    // const passErrStr = JSON.stringify(passwordValDetails);
+    const passErrStr = JSON.stringify(passwordValDetails);
 
-    // if (!isPassValid) {
-    //   return next(new AppError(400, "Password validation failed: " + passErrStr));
-    // }
+    if (!isPassValid) {
+      return next(new AppError(400, "Password validation failed: " + passErrStr));
+    }
 
     //Handles invalid role being passed.
     if (!["MERCHANT", "USER"].includes(role)) {
@@ -88,15 +88,17 @@ class AuthController {
       password,
     });
 
+    const { password: userPass, ...userData } = user;
+
     res
       .status(200)
       .cookie("refresh_token", refreshToken, cookieOptions)
-      .json({ status: "success", data: { user, token: accessToken } });
+      .json({ status: "success", data: { user: userData, token: accessToken } });
   }
+
   static async logout(req, res, next) {}
 
   static async sendVerificationOtp(req, res, next) {
-    console.log(req.user);
     const user = await AuthRepository.findUserId(req.user.id);
 
     if (!user) {
@@ -180,7 +182,7 @@ class AuthController {
 
     const { validatePassword, isPasswordValid } = PasswordUtil;
     const passwordValDetails = validatePassword(password);
-    const isPassValid = isPasswordValid(passwordValDetails);
+    const isPassValid = isPasswordValid(password);
 
     const passErrStr = JSON.stringify(passwordValDetails);
 
