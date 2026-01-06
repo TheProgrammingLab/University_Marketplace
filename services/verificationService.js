@@ -1,10 +1,10 @@
 import pool from "../db/pg.js";
-import VerificationRepository from "../repositories/verificationRepository";
-import EmailService from "./emailService";
+import VerificationRepository from "../repositories/verificationRepository.js";
+import EmailService from "./emailService.js";
 import TokenService from "./tokenService.js";
 
 export default class verificationService {
-  static async sendVerificationLink({ user, type }) {
+  static async sendVerificationLink({ user, type, req = {} }) {
     const client = await pool.connect();
 
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
