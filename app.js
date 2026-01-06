@@ -7,7 +7,6 @@ import authRouter from "./routes/authRoutes.js";
 import morgan from "morgan";
 
 const app = express();
-app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 
