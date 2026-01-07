@@ -4,10 +4,10 @@ import pool from "./db/pg.js";
 
 dotenv.config();
 
-const { HOST, PORT, ENV } = process.env;
+const { HOST, PORT, NODE_ENV } = process.env;
 
 const server = app.listen(PORT, HOST, () => {
-  console.log(`Server running port: ${PORT} in ${ENV}`);
+  console.log(`Server running port: ${PORT} in ${NODE_ENV}`);
 });
 
 process.on("SIGINT", () => {
