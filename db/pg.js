@@ -8,12 +8,12 @@ const {
   PG_HOST,
   PG_PORT,
   PG_DB,
-  ENV,
+  NODE_ENV,
   SUPABASE_DB_CONNECTION_STR,
   SUPABASE_DB_PASS,
 } = process.env;
 let pool;
-if (ENV === "production") {
+if (NODE_ENV === "production") {
   const DB_URL = SUPABASE_DB_CONNECTION_STR.replace("<password>", SUPABASE_DB_PASS);
   pool = new Pool({
     connectionString: DB_URL,
