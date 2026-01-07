@@ -46,7 +46,7 @@ export default function globalErrHandler(err, _, res, next) {
 
   console.log(err);
 
-  if (process.env.ENV === "development") {
+  if (process.env.NODE_ENV === "development") {
     sendDevErro(err, res);
   } else {
     let error = err;

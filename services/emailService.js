@@ -7,7 +7,7 @@ const {
   NODEMAILER_SMTP_HOST,
   NODEMAILER_SMTP_PORT,
   RESEND_API_KEY,
-  ENV,
+  NODE_ENV,
 } = process.env;
 
 const resend = new Resend(RESEND_API_KEY);
@@ -17,7 +17,7 @@ export default class EmailService {
   constructor(user) {
     this.user = user;
 
-    this.isProduction = ENV === "production";
+    this.isProduction = NODE_ENV === "production";
 
     if (!this.isProduction) {
       this.transporter = nodemailer.createTransport({
