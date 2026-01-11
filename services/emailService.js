@@ -6,12 +6,20 @@ const {
   NODEMAILER_SMTP_USER,
   NODEMAILER_SMTP_HOST,
   NODEMAILER_SMTP_PORT,
-  RESEND_API_KEY,
   NODE_ENV,
+  RESEND_API_KEY,
+  USE_RESEND,
+  USE_GMAIL,
+  GMAIL_USER,
+  GMAIL_PASS,
+  BREVO_SMTP_HOST,
+  BREVO_SMTP_PORT,
+  BREVO_SMTP_USER,
+  BREVO_SMTP_PASS,
 } = process.env;
 
 const resend = new Resend(RESEND_API_KEY);
-const DEFAULT_FROM = "UniMart <onboarding@resend.dev>"; // Until we have domain
+const RESEND_DEFAULT_FROM = "UniMart <onboarding@resend.dev>"; // Until we have domain
 
 export default class EmailService {
   constructor(user) {
@@ -19,13 +27,33 @@ export default class EmailService {
 
     this.isProduction = NODE_ENV === "production";
 
-    if (!this.isProduction) {
+    // if (!this.isProduction) {
+    //   this.transporter = nodemailer.createTransport({
+    //     host: NODEMAILER_SMTP_HOST,
+    //     port: Number(NODEMAILER_SMTP_PORT),
+    //     auth: {
+    //       user: NODEMAILER_SMTP_USER,
+    //       pass: NODEMAILER_SMTP_PASS,
+    //     },
+    //   });
+    // }
+
+    //Will change later from gmail to other email provider
+    if (this.isProduction && USE_GMAIL === "true") {
       this.transporter = nodemailer.createTransport({
-        host: NODEMAILER_SMTP_HOST,
-        port: Number(NODEMAILER_SMTP_PORT),
+        service: "gmail",
         auth: {
-          user: NODEMAILER_SMTP_USER,
-          pass: NODEMAILER_SMTP_PASS,
+          user: GMAIL_USER,
+          pass: GMAIL_PASS,
+        },
+      });
+    } else {
+      this.transporter = nodemailer.createTransport({
+        host: this.isProduction ? BREVO_SMTP_HOST : NODEMAILER_SMTP_HOST,
+        port: this.isProduction ? Number(BREVO_SMTP_PORT) : Number(NODEMAILER_SMTP_PORT),
+        auth: {
+          user: this.isProduction ? BREVO_SMTP_USER : NODEMAILER_SMTP_USER,
+          pass: this.isProduction ? BREVO_SMTP_PASS : NODEMAILER_SMTP_PASS,
         },
       });
     }
@@ -33,25 +61,32 @@ export default class EmailService {
 
   async sendMail({ to, subject, text, html }) {
     try {
-      if (this.isProduction) {
-        return await resend.emails.send({
-          from: DEFAULT_FROM,
-          to,
-          subject,
-          text,
-          html,
-        });
-      }
+      // resend can only be sent to my mail if domain is not specified.. so till the domain is ready
+      // if (this.isProduction && USE_RESEND === "true") {
+      //   const result = await resend.emails.send({
+      //     from: DEFAULT_FROM,
+      //     to,
+      //     subject,
+      //     text,
+      //     html,
+      //   });
 
-      return await this.transporter.sendMail({
+      //   console.log("Resend result: ", result);
+      //   return result;
+      // }
+
+      const result = await this.transporter.sendMail({
         from: "UniMart <no-reply@ynodomain.com>",
         to,
         subject,
         text,
         html,
       });
+
+      console.log("Brevo result: ", result);
+      return result;
     } catch (err) {
-      console.error("Failed to send verification email:", err);
+      console.error("Failed to send verification email:", err?.response || err);
       throw err;
     }
   }
