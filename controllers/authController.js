@@ -214,6 +214,10 @@ class AuthController {
     req.user = { id, role };
     next();
   }
+
+  static async restrictTo(req, res, next) {}
+
+  static async restrictToVerifiedUser(req, res, next) {}
 }
 
 export default AuthController;
