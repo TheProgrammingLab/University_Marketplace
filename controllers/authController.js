@@ -215,6 +215,32 @@ class AuthController {
     next();
   }
 
+  static async RefreshAcessToken(req, res, next) {
+    const refreshToken = req.cookies.refresh_token;
+
+    if (!refreshToken) {
+      return next(new AppError("Session expired", 401));
+    }
+
+    const session = await TokenService.verifyRefreshToken({
+      userId: req.user.id,
+      refreshToken,
+    });
+
+    if (!session) {
+      return next(new AppError("Session expired", 401));
+    }
+
+    // 2. (Optional) check session in DB / revoked flag
+
+    const newAccessToken = TokenService.generateAccessToken();
+
+    res.status(200).json({
+      status: "success",
+      token: newAccessToken,
+    });
+  }
+
   static async restrictTo(req, res, next) {}
 
   static async restrictToVerifiedUser(req, res, next) {}
