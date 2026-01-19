@@ -231,7 +231,7 @@ class AuthController {
       return next(new AppError("Session expired", 401));
     }
 
-    // 2. (Optional) check session in DB / revoked flag
+    // 2. (Optional) check session in DB / revoked flag....
 
     const newAccessToken = TokenService.generateAccessToken();
 
