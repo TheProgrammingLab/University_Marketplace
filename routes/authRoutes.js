@@ -19,6 +19,11 @@ router.post(
 router.post("/forgot-password", handleAsyncError(AuthController.forgotPassword));
 router.patch("/reset-password/:token", handleAsyncError(AuthController.resetPassword));
 
-// router.post("/login", login);
+router.get("/refresh", handleAsyncError(AuthController.RefreshAcessToken));
+router.post(
+  "/logout",
+  handleAsyncError(AuthController.protect),
+  handleAsyncError(AuthController.logout)
+);
 
 export default router;
