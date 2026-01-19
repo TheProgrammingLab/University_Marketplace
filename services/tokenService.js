@@ -1,7 +1,6 @@
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import TokenRepository from "../repositories/tokenRepository.js";
-import { AppError } from "../utilities/AppError.js";
 
 const { JWT_ACCESS_SECRET, JWT_ACCESS_EXPIRES } = process.env;
 
@@ -13,17 +12,18 @@ export default class TokenService {
     await TokenRepository.createTokenSession(data, client);
   }
 
-  static async verifyRefreshToken({ userId, refreshToken }) {
-    const session = await TokenRepository.findTokenByUserIdAndToken({
-      userId,
-      token: refreshToken,
-    });
+  static async verifyRefreshToken(refreshToken) {
+    const session = await TokenRepository.findToken(refreshToken);
 
     if (!session || new Date() > session.expires_at) {
       return null;
     }
 
     return session;
+  }
+
+  static async logoutUserSession(refreshToken) {
+    return await TokenRepository.revokeRefreshToken(refreshToken);
   }
 
   static generateAccessToken(payload) {

@@ -9,8 +9,8 @@ import authRouter from "./routes/authRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 
 const app = express();
-app.use(express.json());
 app.use(cookieParser());
+app.use(express.json());
 app.use(morgan("dev"));
 app.use(cors());
 

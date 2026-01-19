@@ -9,13 +9,32 @@ export default class TokenRepository {
     await db.query(query, [userId, token, expiresAt]);
   }
 
-  static async findTokenByUserIdAndToken({ userId, token }, db = pool) {
+  static async findToken(refreshToken, db = pool) {
     const query = `
-    SELECT * FROM refresh_tokens WHERE user_id = $1 AND refresh_token = $2
+    SELECT * FROM refresh_tokens WHERE token = $1
     `;
 
-    const { rows } = await db.query(query, [userId, token]);
+    const { rows } = await db.query(query, [refreshToken]);
 
     return rows[0] || null;
+  }
+
+  static async deleteRefreshToken(refreshToken, db = pool) {
+    const query = `
+    SELECT * FROM refresh_tokens WHERE token = $1
+    `;
+
+    await db.query(query, [refreshToken]);
+  }
+
+  static async revokeRefreshToken(refreshToken, db = pool) {
+    const query = `
+    UPDATE refresh_tokens
+    SET revoked = TRUE
+    WHERE token = $1
+    `;
+
+    const result = await db.query(query, [refreshToken]);
+    return result.rowCount;
   }
 }

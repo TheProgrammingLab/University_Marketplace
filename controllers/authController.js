@@ -13,7 +13,7 @@ const cookieOptions = {
   secure: process.env.NODE_ENV === "production", // HTTPS only in prod
   sameSite: "strict", // Prevent CSRF (use "lax" if cross-site auth)
   maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
-  path: "/auth/refresh",
+  path: "/api/v1/auth",
 };
 
 class AuthController {
@@ -219,26 +219,55 @@ class AuthController {
     const refreshToken = req.cookies.refresh_token;
 
     if (!refreshToken) {
-      return next(new AppError("Session expired", 401));
+      return next(new AppError(401, "Session expired"));
     }
 
-    const session = await TokenService.verifyRefreshToken({
-      userId: req.user.id,
-      refreshToken,
-    });
+    const session = await TokenService.verifyRefreshToken(refreshToken);
 
     if (!session) {
-      return next(new AppError("Session expired", 401));
+      return next(new AppError(401, "Session expired"));
     }
 
     // 2. (Optional) check session in DB / revoked flag....
+    if (session.revoked) {
+      return next(new AppError(403, "Refresh token reuse detected"));
+    }
 
-    const newAccessToken = TokenService.generateAccessToken();
+    //To get the role. Why? come to me(Hassan)🙂
+    const user = await AuthRepository.findUserId(session.user_id);
+
+    if (!user) {
+      return next(new AppError(404, "User doesn't exist"));
+    }
+
+    const newAccessToken = TokenService.generateAccessToken({
+      id: user.id,
+      role: user.role,
+    });
+
+    console.log("clear");
 
     res.status(200).json({
       status: "success",
       token: newAccessToken,
     });
+  }
+
+  static async logout(req, res, next) {
+    const refreshToken = req.cookies.refresh_token;
+
+    if (refreshToken) {
+      const revokedSession = await TokenService.logoutUserSession(refreshToken);
+
+      if (!revokedSession) {
+        return next(new AppError(403, "Invalid refresh token"));
+      }
+    }
+
+    res
+      .clearCookie("refres_token", { httpOnly: true })
+      .status(200)
+      .json({ status: "success", message: "Logged out successfully" });
   }
 
   static async restrictTo(req, res, next) {}

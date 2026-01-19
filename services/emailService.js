@@ -83,7 +83,7 @@ export default class EmailService {
         html,
       });
 
-      console.log("Brevo result: ", result);
+      console.log("Gmail result: ", result);
       return result;
     } catch (err) {
       console.error("Failed to send verification email:", err?.response || err);
