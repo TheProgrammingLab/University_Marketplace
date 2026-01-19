@@ -265,7 +265,7 @@ class AuthController {
     }
 
     res
-      .clearCookie("refres_token", { httpOnly: true })
+      .clearCookie("refresh_token", cookieOptions)
       .status(200)
       .json({ status: "success", message: "Logged out successfully" });
   }
