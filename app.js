@@ -31,12 +31,6 @@ app.use(
   })
 );
 
-app.use(
-  cors({
-    origin: "http://localhost:3000", // React app URL
-    credentials: true, // allow cookies/auth headers
-  })
-);
 app.use("/api/v1/auth/", authRouter);
 app.use("/api/v1/user/", userRouter);
 
