@@ -107,9 +107,13 @@ class AuthService {
       throw new AppError(404, "Cannot find user with this verification token");
     }
 
+    const passwordHash = await PasswordUtil.hashPassword(password);
     try {
       await client.query("BEGIN");
-      await AuthRepository.updateUserPassword({ user_id: user.id, password }, client);
+      await AuthRepository.updateUserPassword(
+        { user_id: user.id, password: passwordHash },
+        client
+      );
       await VerificationRepository.updateUsedToken(
         { user_id: user.id, token_hash: verificationToken.token_hash },
         client
