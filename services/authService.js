@@ -1,7 +1,8 @@
 import bcrypt from "bcrypt";
 import AuthRepository from "../repositories/authRepository.js";
 import { AppError } from "../utilities/AppError.js";
-import TokenService from "./tokenService.js";
+import SessionService from "./sessionService.js";
+import TokenService from "../services/tokenService.js";
 import pool from "../db/pg.js";
 import OtpService from "./otpService.js";
 import PasswordUtil from "../utilities/password.js";
@@ -24,8 +25,8 @@ class AuthService {
       accessToken = TokenService.generateAccessToken({ id: user.id, role: user.role });
       refreshToken = TokenService.generateRefreshToken();
 
-      const tokenData = { userId: user.id, token: refreshToken };
-      await TokenService.logTokenSession(tokenData, client);
+      const tokenData = { userId: user.id, refreshToken, userAgent: data.userAgent };
+      await SessionService.logTokenSession(tokenData, client);
 
       // const { otp, otp_hash } = await OtpService.generateOTP();
       // await new EmailService(user).sendMail(otp);
@@ -43,7 +44,7 @@ class AuthService {
     return { user, accessToken, refreshToken };
   }
 
-  static async login({ loginId, password }) {
+  static async login({ loginId, password, userAgent }) {
     const client = await pool.connect();
     const user = await AuthRepository.findUserByLoginId(loginId);
 
@@ -62,9 +63,9 @@ class AuthService {
     });
     const refreshToken = TokenService.generateRefreshToken();
 
-    const tokenData = { userId: user.id, token: refreshToken };
+    const tokenData = { userId: user.id, refreshToken, userAgent };
     try {
-      await TokenService.logTokenSession(tokenData, client);
+      await SessionService.logTokenSession(tokenData, client);
       console.log("Token session loggged");
     } catch (err) {
       console.log("Failed to log token session");
@@ -106,9 +107,14 @@ class AuthService {
       throw new AppError(404, "Cannot find user with this verification token");
     }
 
+    //
+    const passwordHash = await PasswordUtil.hashPassword(password);
     try {
       await client.query("BEGIN");
-      await AuthRepository.updateUserPassword({ user_id: user.id, password }, client);
+      await AuthRepository.updateUserPassword(
+        { user_id: user.id, password: passwordHash },
+        client
+      );
       await VerificationRepository.updateUsedToken(
         { user_id: user.id, token_hash: verificationToken.token_hash },
         client
