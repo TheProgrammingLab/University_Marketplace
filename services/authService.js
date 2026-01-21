@@ -107,6 +107,7 @@ class AuthService {
       throw new AppError(404, "Cannot find user with this verification token");
     }
 
+    //
     const passwordHash = await PasswordUtil.hashPassword(password);
     try {
       await client.query("BEGIN");
