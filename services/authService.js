@@ -7,6 +7,7 @@ import pool from "../db/pg.js";
 import OtpService from "./otpService.js";
 import PasswordUtil from "../utilities/password.js";
 import VerificationRepository from "../repositories/verificationRepository.js";
+import UserService from "./userService.js";
 
 //Documentation later here too, lol.
 
@@ -27,6 +28,8 @@ class AuthService {
 
       const tokenData = { userId: user.id, refreshToken, userAgent: data.userAgent };
       await SessionService.logTokenSession(tokenData, client);
+      await UserService.createUserProfile(user.id, client);
+      await UserService.createUserSettings(user.id, client);
 
       // const { otp, otp_hash } = await OtpService.generateOTP();
       // await new EmailService(user).sendMail(otp);
@@ -35,7 +38,7 @@ class AuthService {
       await client.query("COMMIT");
     } catch (err) {
       await client.query("ROLLBACK");
-      console.log(err);
+      console.log("Error registering user: ", err);
       throw err;
     } finally {
       client.release();
