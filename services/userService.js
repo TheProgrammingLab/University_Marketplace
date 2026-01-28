@@ -1,5 +1,6 @@
 import ProfileRepository from "../repositories/profileRepository.js";
 import SettingRepository from "../repositories/settingsRepository.js";
+import { AppError } from "../utilities/AppError.js";
 
 export default class UserService {
   static async createUserProfile(userId, client) {
@@ -17,6 +18,15 @@ export default class UserService {
     } catch (err) {
       console.log(err);
       throw err;
+    }
+  }
+
+  static async getUserProfile(userId) {
+    try {
+      return await ProfileRepository.getUserProfile(userId);
+    } catch (err) {
+      console.log(err);
+      throw new AppError(500, "Failed to fetch user profile.");
     }
   }
 }
