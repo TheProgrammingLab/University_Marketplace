@@ -36,10 +36,12 @@ class AuthController {
       return next(
         new AppError(
           400,
-          "Missing some or all required fields: [email, password, first_name, last_name, role]"
-        )
+          "Missing some or all required fields: [email, password, first_name, last_name, role]",
+        ),
       );
     }
+
+    //prevent invalid role later
 
     const { validatePassword, isPasswordValid } = PasswordUtil;
     const passwordValDetails = validatePassword(password);
@@ -65,7 +67,7 @@ class AuthController {
       password,
       first_name,
       last_name,
-      role,
+      role: role.toUpperCase(),
       userAgent,
     });
 
@@ -213,7 +215,7 @@ class AuthController {
     }
     if (!token) {
       return next(
-        new AppError(401, "No authorization header, please log in to get access")
+        new AppError(401, "No authorization header, please log in to get access"),
       );
     }
 
@@ -278,14 +280,24 @@ class AuthController {
       .json({ status: "success", message: "Logged out successfully" });
   }
 
-  static async restrictTo(req, res, next) {}
+  static async restrictTo(...roles) {
+    return function (req, res, next) {
+      if (!roles.includes(req.user.role)) {
+        return next(
+          new AppError(401, "You do not have permission to perform this action"),
+        );
+      }
+
+      next();
+    };
+  }
 
   static async restrictToVerifiedUser(req, res, next) {
     if (!req.user.isVerified) {
       return next(
         new AppError(
-          "Account needs to be verified to perfrom this action. Please verify your account."
-        )
+          "Account needs to be verified to perfrom this action. Please verify your account.",
+        ),
       );
     }
 

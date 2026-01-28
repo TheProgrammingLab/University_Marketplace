@@ -14,7 +14,7 @@ export default class ProfileRepository {
     const query = `
     SELECT u.id, u.first_name, u.last_name, u.username, u.email, p.avatar_url, p.phone
     FROM users u
-    INNER JOIN user_profiles p ON p.user_id = u.id
+    LEFT JOIN user_profiles p ON p.user_id = u.id
     WHERE u.id = $1
     `;
 
