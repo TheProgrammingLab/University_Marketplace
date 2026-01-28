@@ -1,6 +1,7 @@
 import AuthRepository from "../repositories/authRepository.js";
 import AuthService from "../services/authService.js";
 import OtpService from "../services/otpService.js";
+import SessionService from "../services/sessionService.js";
 import TokenService from "../services/tokenService.js";
 import verificationService from "../services/verificationService.js";
 import { AppError } from "../utilities/AppError.js";
@@ -35,10 +36,12 @@ class AuthController {
       return next(
         new AppError(
           400,
-          "Missing some or all required fields: [email, password, first_name, last_name, role]"
-        )
+          "Missing some or all required fields: [email, password, first_name, last_name, role]",
+        ),
       );
     }
+
+    //prevent invalid role later
 
     const { validatePassword, isPasswordValid } = PasswordUtil;
     const passwordValDetails = validatePassword(password);
@@ -55,7 +58,8 @@ class AuthController {
       return next(new AppError(400, "Invalid role data, must be 'MERCHANT' or 'USER' "));
     }
 
-    // Handle password length.
+    //userAgent
+    const userAgent = req.get("user-agent") || null;
 
     const { user, accessToken, refreshToken } = await AuthService.register({
       email,
@@ -63,7 +67,8 @@ class AuthController {
       password,
       first_name,
       last_name,
-      role,
+      role: role.toUpperCase(),
+      userAgent,
     });
 
     res
@@ -83,9 +88,13 @@ class AuthController {
       return next(new AppError(400, "Missing loginId or password"));
     }
 
+    //userAgent
+    const userAgent = req.get("user-agent") || null;
+
     const { user, accessToken, refreshToken } = await AuthService.login({
       loginId,
       password,
+      userAgent,
     });
 
     const { password: userPass, ...userData } = user;
@@ -177,6 +186,7 @@ class AuthController {
     if (!req.body || !req.body.password) {
       return next(new AppError(400, "Missing new password."));
     }
+
     const token = req.params.token;
     const password = req.body.password;
 
@@ -205,7 +215,7 @@ class AuthController {
     }
     if (!token) {
       return next(
-        new AppError(401, "No authorization header, please log in to get access")
+        new AppError(401, "No authorization header, please log in to get access"),
       );
     }
 
@@ -222,7 +232,7 @@ class AuthController {
       return next(new AppError(401, "Session expired"));
     }
 
-    const session = await TokenService.verifyRefreshToken(refreshToken);
+    const session = await SessionService.verifyRefreshToken(refreshToken);
 
     if (!session) {
       return next(new AppError(401, "Session expired"));
@@ -257,7 +267,7 @@ class AuthController {
     const refreshToken = req.cookies.refresh_token;
 
     if (refreshToken) {
-      const revokedSession = await TokenService.logoutUserSession(refreshToken);
+      const revokedSession = await SessionService.logoutUserSession(refreshToken);
 
       if (!revokedSession) {
         return next(new AppError(403, "Invalid refresh token"));
@@ -270,9 +280,29 @@ class AuthController {
       .json({ status: "success", message: "Logged out successfully" });
   }
 
-  static async restrictTo(req, res, next) {}
+  static async restrictTo(...roles) {
+    return function (req, res, next) {
+      if (!roles.includes(req.user.role)) {
+        return next(
+          new AppError(401, "You do not have permission to perform this action"),
+        );
+      }
 
-  static async restrictToVerifiedUser(req, res, next) {}
+      next();
+    };
+  }
+
+  static async restrictToVerifiedUser(req, res, next) {
+    if (!req.user.isVerified) {
+      return next(
+        new AppError(
+          "Account needs to be verified to perfrom this action. Please verify your account.",
+        ),
+      );
+    }
+
+    next();
+  }
 }
 
 export default AuthController;
