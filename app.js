@@ -8,6 +8,7 @@ import globalErrHandler from "./middlewares/globalErrHandler.js";
 import authRouter from "./routes/authRoutes.js";
 import userRouter from "./routes/userRoutes.js";
 import postRouter from "./routes/postRoutes.js";
+import listingRouter from "./routes/listingRoutes.js";
 import marketPlaceRouter from "./routes/marketPlaceRoutes.js";
 
 const app = express();
@@ -36,6 +37,7 @@ app.use(
 app.use("/api/v1/auth/", authRouter);
 app.use("/api/v1/user/", userRouter);
 app.use("/api/v1/post/", postRouter);
+app.use("/api/v1/listing/", listingRouter);
 app.use("/api/v1/marketplace/", marketPlaceRouter);
 
 app.use(handleUndefinedRoutes);

@@ -3,8 +3,8 @@ import PostService from "./postService.js";
 
 export default class MarketplaceService {
   static async getMarketPlacePostsAndListings() {
-    const posts = await PostService.getAllPosts();
-    const listings = await ListingService.getAllListings();
+    const posts = await PostService.getAllPostsData();
+    const listings = await ListingService.getAllListingData();
 
     return { posts, listings };
   }
