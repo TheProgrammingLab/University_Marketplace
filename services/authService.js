@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import AuthRepository from "../repositories/authRepository.js";
 import { AppError } from "../utilities/AppError.js";
 import SessionService from "./sessionService.js";
@@ -116,11 +115,11 @@ class AuthService {
       await client.query("BEGIN");
       await AuthRepository.updateUserPassword(
         { user_id: user.id, password: passwordHash },
-        client
+        client,
       );
       await VerificationRepository.updateUsedToken(
         { user_id: user.id, token_hash: verificationToken.token_hash },
-        client
+        client,
       );
 
       await client.query("COMMIT");

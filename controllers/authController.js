@@ -243,7 +243,7 @@ class AuthController {
       return next(new AppError(403, "Refresh token reuse detected"));
     }
 
-    //To get the role. Why? come to me(Hassan)🙂
+    //To get the role. Why? come to me(Hassan)🙂. Tho better design in my next project, will stil leave it.
     const user = await AuthRepository.findUserId(session.user_id);
 
     if (!user) {
