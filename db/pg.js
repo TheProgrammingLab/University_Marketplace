@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const {
-  PG_USER,
+  PG_USER, // WIll change it later from sUser.
   PG_PASS,
   PG_HOST,
   PG_PORT,
